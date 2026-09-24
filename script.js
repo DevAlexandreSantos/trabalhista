@@ -17,8 +17,8 @@ function inss(base) {
   return r2(tot);
 }
 
-function irrf(bruto, inssVal, deps) {
-  const legal = inssVal + deps * DEP;
+function irrf(bruto, inssVal, deps, extra = 0) {
+  const legal = inssVal + deps * DEP + extra;
   const ded = Math.max(legal, SIMPL);
   const base = Math.max(0, bruto - ded);
   let imposto = 0;
@@ -255,7 +255,61 @@ function calcRescisao() {
     extras, alerts, notes
   };
 }
+/* ---------- Folha completa ---------- */
+function calcFolha() {
+  const sal = n('fo-sal'), jor = n('fo-jor'), faltas = Math.min(30, n('fo-falt')), deps = ni('fo-dep');
+  const h1 = n('fo-h1'), h2 = n('fo-h2'), du = Math.max(1, n('fo-du')), df = n('fo-df');
+  const adic = $('fo-adic').value, hn = n('fo-hn'), pn = n('fo-pn'), outros = n('fo-out');
+  const vt = $('fo-vt').checked, pens = n('fo-pen'), outD = n('fo-od');
+  if (sal <= 0) return { empty: 'Informe o salário bruto para montar a folha.' };
 
+  const SM = 1621.00;
+  const vh = sal / (jor * 5);
+  const dias = 30 - faltas;
+  const salPago = r2(sal / 30 * dias);
+  const he1 = r2(h1 * vh * 1.5), he2 = r2(h2 * vh * 2);
+  const dsr = r2((he1 + he2) / du * df);
+  const noturno = r2(hn * vh * pn / 100);
+  const insal = { i10: 0.1, i20: 0.2, i40: 0.4 }[adic] || 0;
+  const insalV = r2(SM * insal);
+  const peric = adic === 'per' ? r2(sal * 0.3) : 0;
+  const bruto = r2(salPago + he1 + he2 + dsr + noturno + insalV + peric + outros);
+
+  const i = inss(bruto);
+  const ir = irrf(bruto, i, deps, pens);
+  const vtV = vt ? r2(sal * 0.06) : 0;
+
+  return {
+    title: 'Holerite do mês',
+    rows: [
+      { d: 'Salário base', ref: `${dias} d`, p: salPago },
+      { d: 'Horas extras 50%', ref: `${num(h1)} h`, p: he1 },
+      { d: 'Horas extras 100%', ref: `${num(h2)} h`, p: he2 },
+      { d: 'DSR sobre horas extras', ref: `${df}/${du}`, p: dsr },
+      { d: `Adicional noturno ${num(pn)}%`, ref: `${num(hn)} h`, p: noturno },
+      { d: 'Insalubridade', ref: pctf(insal), p: insalV },
+      { d: 'Periculosidade', ref: '30%', p: peric },
+      { d: 'Outros proventos', ref: '', p: r2(outros) },
+      { d: 'INSS', ref: pctf(inssAliq(bruto)), x: i },
+      { d: 'IRRF', ref: pctf(irrfAliq(ir.base)), x: ir.final },
+      { d: 'Vale-transporte', sub: '6% do salário base', ref: '6%', x: vtV },
+      { d: 'Pensão alimentícia', ref: '', x: r2(pens) },
+      { d: 'Outros descontos', ref: '', x: r2(outD) }
+    ],
+    extras: [
+      { l: 'FGTS do mês (8%, pago pela empresa)', v: brl(r2(bruto * 0.08)) },
+      { l: 'Base do INSS', v: brl(bruto) },
+      { l: 'Base do IRRF', v: brl(ir.base), h: ir.reducao > 0 ? `Redução de 2026: ${brl(ir.reducao)}` : 'Sem redução de 2026' }
+    ],
+    alerts: [],
+    notes: [
+      `Valor da hora = salário ÷ ${jor * 5}. Faltas descontam salário ÷ 30 por dia.`,
+      'Insalubridade é calculada sobre o salário mínimo (R$ 1.621,00); periculosidade, sobre o salário. Os dois não se acumulam.',
+      'INSS e IRRF incidem sobre todos os proventos. A pensão alimentícia reduz a base do IR.',
+      'O vale-transporte desconta 6% do salário, limitado ao custo real do transporte.'
+    ]
+  };
+}
 /* ---------- Renderização ---------- */
 let lastNet = null;
 function render(cfg) {
@@ -289,7 +343,7 @@ function render(cfg) {
 }
 
 /* ---------- Abas ---------- */
-const TABS = { he: calcHE, fe: calcFerias, re: calcRescisao };
+const TABS = { he: calcHE, fe: calcFerias, re: calcRescisao, fo: calcFolha };
 let current = 'he';
 function recalc() {
   if (current === 're') updateAvisoOptions();
@@ -302,14 +356,14 @@ function setTab(t) {
     b.setAttribute('aria-selected', on);
     b.tabIndex = on ? 0 : -1;
   });
-  ['he', 'fe', 're'].forEach(k => { $('f-' + k).hidden = k !== t; });
+  ['he', 'fe', 're', 'fo'].forEach(k => { $('f-' + k).hidden = k !== t; });
   recalc();
 }
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
 document.querySelector('.tabs').addEventListener('keydown', e => {
-  const order = ['he', 'fe', 're'];
+  const order = ['he', 'fe', 're', 'fo'];
   let i = order.indexOf(current);
-  if (e.key === 'ArrowRight') i = (i + 1) % 3; else if (e.key === 'ArrowLeft') i = (i + 2) % 3; else return;
+  if (e.key === 'ArrowRight') i = (i + 1) % 4; else if (e.key === 'ArrowLeft') i = (i + 3) % 4; else return;
   setTab(order[i]); $('t-' + order[i]).focus();
 });
 document.querySelector('.grid').addEventListener('input', recalc);
@@ -319,8 +373,8 @@ setTab('he');
 function inssAliq(base) {
   if (base <= 0) return 0;
   for (const [lim, al] of INSS_FAIXAS) if (base <= lim) return al;
-  return INSS_FAIXAS[INSS_FAIXAS.length - 1][1];
-}function irrfAliq(base) {
+  return INSS_FAIXAS[INSS_FAIXAS.length - 1][1];}
+function irrfAliq(base) {
   for (const [lim, al] of IR_FAIXAS) if (base <= lim) return al;
   return 0;
 }
