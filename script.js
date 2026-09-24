@@ -84,8 +84,8 @@ function calcHE() {
       { d: `Horas extras ${num(p1)}%`, sub: 'Dias úteis', ref: `${num(h1)} h`, p: he1 },
       { d: `Horas extras ${num(p2)}%`, sub: 'Domingos e feriados', ref: `${num(h2)} h`, p: he2 },
       { d: 'DSR sobre horas extras', ref: `${df}/${du}`, p: dsr },
-      { d: 'INSS', ref: pctf(i / bruto), x: i },
-      { d: 'IRRF', ref: ir.reducao > 0 && ir.final === 0 ? 'isento' : (bruto ? pctf(ir.final / bruto) : ''), x: ir.final }
+      { d: 'INSS', ref: pctf(inssAliq(bruto)), x: i },
+      { d: 'IRRF', ref: ir.final === 0 ? 'isento' : pctf(irrfAliq(ir.base)), x: ir.final },
     ],
     extras: [
       { l: 'Valor da hora normal', v: brl(r2(vh)), h: `${brl(sal)} ÷ ${divisor} horas` },
@@ -124,8 +124,8 @@ function calcFerias() {
       { d: '1/3 constitucional', ref: '', p: terco },
       { d: 'Abono pecuniário', sub: 'Sem INSS e IR', ref: `${abonoDias} d`, p: abonoV },
       { d: '1/3 sobre o abono', sub: 'Sem INSS e IR', ref: '', p: abono3 },
-      { d: 'INSS', ref: trib ? pctf(i / trib) : '', x: i },
-      { d: 'IRRF', ref: ir.reducao > 0 && ir.final === 0 ? 'isento' : (trib ? pctf(ir.final / trib) : ''), x: ir.final }
+      { d: 'INSS', ref: pctf(inssAliq(trib)), x: i },
+      { d: 'IRRF', ref: ir.final === 0 ? 'isento' : pctf(irrfAliq(ir.base)), x: ir.final },
     ],
     extras: [
       { l: 'Dias de direito', v: `${dias} dias`, h: faltas ? `${faltas} falta(s) injustificada(s)` : 'Sem faltas' },
@@ -316,3 +316,11 @@ document.querySelector('.grid').addEventListener('input', recalc);
 document.querySelector('.grid').addEventListener('change', recalc);
 updateAvisoOptions();
 setTab('he');
+function inssAliq(base) {
+  if (base <= 0) return 0;
+  for (const [lim, al] of INSS_FAIXAS) if (base <= lim) return al;
+  return INSS_FAIXAS[INSS_FAIXAS.length - 1][1];
+}function irrfAliq(base) {
+  for (const [lim, al] of IR_FAIXAS) if (base <= lim) return al;
+  return 0;
+}
