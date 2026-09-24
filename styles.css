@@ -132,3 +132,21 @@ footer h3 { font-size: .95rem; margin: 6px 0 8px; color: var(--ink); }
 .tbl-wrap th:first-child, .tbl-wrap td:first-child { padding-left: 0; }
 
 @media (prefers-reduced-motion: reduce) { .liquido.flash strong { animation: none; } }
+
+.band .wrap { position: relative; }
+
+.band-img {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.band h1 { padding-right: 96px; }
+
+@media (max-width: 480px) {
+  .band-img { width: 56px; height: 56px; }
+  .band h1 { padding-right: 68px; }
+}
