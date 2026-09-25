@@ -260,7 +260,7 @@ function calcFolha() {
   const sal = n('fo-sal'), jor = n('fo-jor'), faltas = Math.min(30, n('fo-falt')), deps = ni('fo-dep');
   const h1 = n('fo-h1'), h2 = n('fo-h2'), du = Math.max(1, n('fo-du')), df = n('fo-df');
   const adic = $('fo-adic').value, hn = n('fo-hn'), pn = n('fo-pn'), outros = n('fo-out');
-  const vt = $('fo-vt').checked, pens = n('fo-pen'), outD = n('fo-od');
+  const vt = n('fo-vt'), pens = n('fo-pen'), outD = n('fo-od');
   if (sal <= 0) return { empty: 'Informe o salário bruto para montar a folha.' };
 
   const SM = 1621.00;
@@ -277,7 +277,7 @@ function calcFolha() {
 
   const i = inss(bruto);
   const ir = irrf(bruto, i, deps, pens);
-  const vtV = vt ? r2(sal * 0.06) : 0;
+  const vtV = r2(Math.min(sal * 0.06, vt));
 
   return {
     title: 'Holerite do mês',
@@ -292,7 +292,7 @@ function calcFolha() {
       { d: 'Outros proventos', ref: '', p: r2(outros) },
       { d: 'INSS', ref: pctf(inssAliq(bruto)), x: i },
       { d: 'IRRF', ref: pctf(irrfAliq(ir.base)), x: ir.final },
-      { d: 'Vale-transporte', sub: '6% do salário base', ref: '6%', x: vtV },
+      { d: 'Vale-transporte', sub: '6% do salário, limitado ao custo', ref: vtV ? pctf(vtV / sal) : '', x: vtV },
       { d: 'Pensão alimentícia', ref: '', x: r2(pens) },
       { d: 'Outros descontos', ref: '', x: r2(outD) }
     ],
