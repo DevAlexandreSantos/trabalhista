@@ -373,7 +373,8 @@ setTab('he');
 function inssAliq(base) {
   if (base <= 0) return 0;
   for (const [lim, al] of INSS_FAIXAS) if (base <= lim) return al;
-  return INSS_FAIXAS[INSS_FAIXAS.length - 1][1];}
+  return INSS_FAIXAS[INSS_FAIXAS.length - 1][1];
+}
 function irrfAliq(base) {
   for (const [lim, al] of IR_FAIXAS) if (base <= lim) return al;
   return 0;
