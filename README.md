@@ -1,6 +1,6 @@
 # Calculadora Trabalhista
 
-Calculadora web de **horas extras**, **férias** e **rescisão**, feita em HTML, CSS e JavaScript puro (sem frameworks e sem etapa de build). Usa as tabelas de **INSS** e **Imposto de Renda de 2026**, incluindo a nova redução do IR da Lei 15.270/2025 (isenção para rendimentos de até R$ 5.000).
+Calculadora web de **horas extras**, **férias**, **rescisão** e **folha de pagamento completa**, feita em HTML, CSS e JavaScript puro (sem frameworks e sem etapa de build). Usa as tabelas de **INSS** e **Imposto de Renda de 2026**, incluindo a nova redução do IR da Lei 15.270/2025 (isenção para rendimentos de até R$ 5.000).
 
 O resultado aparece no formato de um holerite, com proventos, descontos e o valor líquido, além de uma seção "Como calculamos" que explica cada conta.
 
@@ -27,6 +27,12 @@ O resultado aparece no formato de um holerite, com proventos, descontos e o valo
 - Aviso indenizado somado ao tempo de serviço (projeção do fim do contrato).
 - Multa do FGTS (40% ou 20%) e estimativa do saque liberado. É possível informar o saldo real do FGTS para melhorar a estimativa.
 - Alertas contextuais, como prazo de pagamento e seguro-desemprego.
+
+### Folha completa
+- Holerite do mês com salário, faltas (desconto de salário ÷ 30 por dia), horas extras a 50%/100% e DSR.
+- Adicional noturno (percentual configurável) e adicionais de insalubridade (10%, 20% ou 40% sobre o salário mínimo) ou periculosidade (30% do salário) — não acumuláveis.
+- Outros proventos, vale-transporte (6% do salário, limitado ao custo informado), pensão alimentícia (reduz a base do IR) e outros descontos.
+- INSS e IRRF sobre o total de proventos, e FGTS do mês (8%) exibido como informação.
 
 ### Interface
 - Layout responsivo, com abas acessíveis (`role="tablist"`, navegação por setas do teclado).
@@ -59,6 +65,7 @@ Depois acesse `http://localhost:8000`.
 
 ```
 .
+├── img/         # logo exibida no cabeçalho e no favicon
 ├── index.html   # estrutura da página, formulários e tabelas de referência
 ├── styles.css   # estilos, temas claro/escuro e layout responsivo
 └── script.js    # regras de cálculo, renderização do holerite e controle das abas
@@ -67,8 +74,8 @@ Depois acesse `http://localhost:8000`.
 O `script.js` é dividido em três partes:
 
 - **Núcleo de cálculo** (entre `CORE-START` e `CORE-END`): funções puras `inss`, `irrf`, `avos`, `fullYears` e utilitários de data, sem acesso ao DOM.
-- **Calculadoras** (`calcHE`, `calcFerias`, `calcRescisao`): cada uma lê os campos e devolve um objeto com linhas do holerite, informações extras, alertas e notas.
-- **Renderização e abas** (`render`, `setTab`, `recalc`): monta a tabela de proventos e descontos e troca entre os três cálculos.
+- **Calculadoras** (`calcHE`, `calcFerias`, `calcRescisao`, `calcFolha`): cada uma lê os campos e devolve um objeto com linhas do holerite, informações extras, alertas e notas.
+- **Renderização e abas** (`render`, `setTab`, `recalc`): monta a tabela de proventos e descontos e troca entre os quatro cálculos.
 
 ## Tabelas de 2026 usadas
 
@@ -109,7 +116,8 @@ Os valores ficam no topo do `script.js` (`INSS_FAIXAS`, `IR_FAIXAS`, `DEP`, `SIM
 
 - O IR das férias considera apenas o valor das férias isoladamente; na folha real, a redução de 2026 leva em conta todos os rendimentos do mês.
 - Férias vencidas em dobro (período concessivo ultrapassado) não são calculadas.
-- Não há suporte a pensão alimentícia, adicionais (insalubridade, periculosidade, noturno), faltas no mês ou descontos personalizados.
+- Pensão alimentícia, adicionais (insalubridade, periculosidade, noturno), faltas no mês e descontos personalizados só são considerados na aba **Folha completa** — não entram nos cálculos de horas extras, férias ou rescisão.
+- Insalubridade e periculosidade não se acumulam entre si na Folha completa.
 - O saldo do FGTS é estimado em 8% do salário por mês trabalhado quando não informado.
 - O cálculo é individual e não substitui a conferência com o RH, o contador ou o sindicato.
 
